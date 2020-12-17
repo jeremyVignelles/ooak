@@ -5,6 +5,9 @@
         <LangVersion>9</LangVersion>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
+    <PropertyGroup>
+      <NoWarn>1701;1702;0659</NoWarn>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="NUnit" Version="3.12.0" />

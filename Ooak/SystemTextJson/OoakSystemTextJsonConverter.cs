@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -62,62 +61,77 @@ namespace Ooak.SystemTextJson
             {
                 return null;
             }
-            using JsonDocument document = JsonDocument.ParseValue(ref reader);
-            var bufferWriter = new ArrayBufferWriter<byte>();
-            using (var writer = new Utf8JsonWriter(bufferWriter))
-            {
-                document.WriteTo(writer);
-            }
-            TLeft left = default;
-            var leftIsValid = false;
+            
             try
             {
-                left = JsonSerializer.Deserialize<TLeft>(bufferWriter.WrittenSpan, options);
-                leftIsValid = true;
-            }
-            catch (JsonException)
-            {
-            }
-
-            TRight right = default;
-            var rightIsValid = false;
-            try
-            {
-                right = JsonSerializer.Deserialize<TRight>(bufferWriter.WrittenSpan, options);
-                rightIsValid = true;
-            }
-            catch (JsonException)
-            {
-            }
-
-            if (leftIsValid && rightIsValid)
-            {
-                if (this.Kind == ConverterKind.OneOf)
+                TLeft left = default;
+                var leftIsValid = false;
+                Exception? leftException = null;
+                try
                 {
-                    throw new JsonException("Matches both types where OneOf was specified. Use AnyOf for that scenario.");
+                    var reader2 = reader;
+                    left = JsonSerializer.Deserialize<TLeft>(ref reader2, options);
+                    leftIsValid = true;
                 }
-                return new TypeUnion<TLeft, TRight>.Both(left!, right!);
-            }
-
-            if (leftIsValid)
-            {
-                if (this.Kind == ConverterKind.AllOf)
+                catch (JsonException ex)
                 {
-                    throw new JsonException($"Matches only the left type while allOf was specified. The value didn't match type {typeof(TRight).Name}");
+                    leftException = ex;
                 }
-                return new TypeUnion<TLeft, TRight>.Left(left!);
-            }
-
-            if (rightIsValid)
-            {
-                if (this.Kind == ConverterKind.AllOf)
+                
+                TRight right = default;
+                var rightIsValid = false;
+                Exception? rightException = null;
+                try
                 {
-                    throw new JsonException($"Matches only the right type while allOf was specified. The value didn't match type {typeof(TLeft).Name}");
+                    var reader2 = reader;
+                    right = JsonSerializer.Deserialize<TRight>(ref reader2, options);
+                    rightIsValid = true;
                 }
-                return new TypeUnion<TLeft, TRight>.Right(right!);
-            }
+                catch (JsonException ex)
+                {
+                    rightException = ex;
+                }
 
-            throw new JsonException($"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name}");
+                if (leftIsValid && rightIsValid)
+                {
+                    if (this.Kind == ConverterKind.OneOf)
+                    {
+                        throw new JsonException(
+                            "Matches both types where OneOf was specified. Use AnyOf for that scenario.");
+                    }
+
+                    return new TypeUnion<TLeft, TRight>.Both(left!, right!);
+                }
+
+                if (leftIsValid)
+                {
+                    if (this.Kind == ConverterKind.AllOf)
+                    {
+                        throw new JsonException(
+                            $"Matches only the left type while allOf was specified. The value didn't match type {typeof(TRight).Name}", rightException);
+                    }
+
+                    return new TypeUnion<TLeft, TRight>.Left(left!);
+                }
+
+                if (rightIsValid)
+                {
+                    if (this.Kind == ConverterKind.AllOf)
+                    {
+                        throw new JsonException(
+                            $"Matches only the right type while allOf was specified. The value didn't match type {typeof(TLeft).Name}", rightException);
+                    }
+
+                    return new TypeUnion<TLeft, TRight>.Right(right!);
+                }
+
+                throw new JsonException(
+                    $"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name}", new AggregateException(leftException, rightException));
+            }
+            finally
+            {
+                reader.Skip();
+            }
         }
 
         /// <summary>

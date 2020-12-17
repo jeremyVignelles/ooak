@@ -59,33 +59,32 @@ namespace Ooak.NewtonsoftJson
         /// <returns>The object value.</returns>
         public override TypeUnion<TLeft, TRight> ReadJson(JsonReader reader, Type objectType, TypeUnion<TLeft, TRight>? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            if (reader.TokenType == JsonToken.Null)
-            {
-                return null;
-            }
-
             JToken token = JToken.ReadFrom(reader);
 
             TLeft left = default;
             var leftIsValid = false;
+            Exception? leftException = null;
             try
             {
                 left = token.ToObject<TLeft>(serializer);
                 leftIsValid = true;
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
+                leftException = ex;
             }
 
             TRight right = default;
             var rightIsValid = false;
+            Exception? rightException = null;
             try
             {
                 right = token.ToObject<TRight>(serializer);
                 rightIsValid = true;
             }
-            catch (JsonException)
+            catch (JsonException ex)
             {
+                rightException = ex;
             }
 
             if (leftIsValid && rightIsValid)
@@ -101,7 +100,7 @@ namespace Ooak.NewtonsoftJson
             {
                 if (this.Kind == ConverterKind.AllOf)
                 {
-                    throw new JsonSerializationException($"Matches only the left type while allOf was specified. The value didn't match type {typeof(TRight).Name}");
+                    throw new JsonSerializationException($"Matches only the left type while allOf was specified. The value didn't match type {typeof(TRight).Name}", rightException!);
                 }
                 return new TypeUnion<TLeft, TRight>.Left(left!);
             }
@@ -110,12 +109,12 @@ namespace Ooak.NewtonsoftJson
             {
                 if (this.Kind == ConverterKind.AllOf)
                 {
-                    throw new JsonSerializationException($"Matches only the right type while allOf was specified. The value didn't match type {typeof(TLeft).Name}");
+                    throw new JsonSerializationException($"Matches only the right type while allOf was specified. The value didn't match type {typeof(TLeft).Name}", leftException!);
                 }
                 return new TypeUnion<TLeft, TRight>.Right(right!);
             }
 
-            throw new JsonSerializationException($"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name}");
+            throw new JsonSerializationException($"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name}", new AggregateException(leftException, rightException));
         }
 
         /// <summary>

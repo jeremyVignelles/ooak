@@ -43,7 +43,7 @@ namespace Ooak.Testing
 
     public class StringWrapper
     {
-        public string Value { get; set; }
+        public string Value { get; set; } = default!;
 
         public override bool Equals(object? obj)
         {
