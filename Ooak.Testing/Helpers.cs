@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Ooak.Testing
@@ -42,31 +43,31 @@ namespace Ooak.Testing
         [return: MaybeNull]
         public static T DeserializeNewtonsoftJson<T>(string input, params Newtonsoft.Json.JsonConverter[] converters)
         {
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(input, converters);
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(input, new Newtonsoft.Json.JsonSerializerSettings
+            {
+                Converters = converters,
+                DateParseHandling = DateParseHandling.None // Otherwise, OneOf<DateTime, string> would have a string component that is a dateTime.ToString() rather than the original value.
+            });
         }
-
-        public static void TestSuccess<TDeserialized>(string input, TDeserialized expected)
-        {
-            var deserialized = DeserializeSystemTextJson<TDeserialized>(input);
-            Console.WriteLine("Checking System.Text.Json deserialized value");
-            Assert.AreEqual(expected, deserialized);
-
-            var deserializedNewtonsoft = DeserializeNewtonsoftJson<TDeserialized>(input);
-            Console.WriteLine("Checking Newtonsoft.Json deserialized value");
-            Assert.AreEqual(expected, deserializedNewtonsoft);
-        }
-
+        
         public static void TestSuccess<TDeserialized, TLeft, TRight>(string input, TDeserialized expected, string converterType)
+            where TLeft : notnull
+            where TRight : notnull
+        {
+            TestSuccess<TDeserialized, TLeft, TRight>(input, expected, expected, converterType);
+        }
+
+        public static void TestSuccess<TDeserialized, TLeft, TRight>(string input, TDeserialized systemTextJsonExpected, TDeserialized newtonsoftJsonExpected, string converterType)
             where TLeft : notnull
             where TRight : notnull
         {
             var deserialized = DeserializeSystemTextJson<TDeserialized>(input, MakeSystemTextJsonConverter<TLeft, TRight>(converterType));
             Console.WriteLine("Checking System.Text.Json deserialized value");
-            Assert.AreEqual(expected, deserialized);
+            Assert.AreEqual(systemTextJsonExpected, deserialized);
 
             var deserializedNewtonsoft = DeserializeNewtonsoftJson<TDeserialized>(input, MakeNewtonsoftJsonConverter<TLeft, TRight>(converterType));
             Console.WriteLine("Checking Newtonsoft.Json deserialized value");
-            Assert.AreEqual(expected, deserializedNewtonsoft);
+            Assert.AreEqual(newtonsoftJsonExpected, deserializedNewtonsoft);
         }
 
         public static void TestFailure<TDeserialized>(string input)

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
 
 namespace Ooak.Testing
@@ -11,20 +9,20 @@ namespace Ooak.Testing
         [Test]
         public void CollectionTest()
         {
-            Helpers.TestSuccess<TypeUnion<int, bool>[], int, bool>("[3, 2, true]", new TypeUnion<int, bool>[]
+            Helpers.TestSuccess<TypeUnion<int, DateTime>[], int, DateTime>("[3, 2, \"2020-01-01T14:00:00Z\"]", new TypeUnion<int, DateTime>[]
             {
-                new TypeUnion<int, bool>.Left(3),
-                new TypeUnion<int, bool>.Left(2),
-                new TypeUnion<int, bool>.Right(true),
+                new TypeUnion<int, DateTime>.Left(3),
+                new TypeUnion<int, DateTime>.Left(2),
+                new TypeUnion<int, DateTime>.Right(new DateTime(2020, 1, 1, 14, 0, 0, DateTimeKind.Utc)),
             }, "OneOf");
 
-            Helpers.TestFailure<TypeUnion<int, bool>[], int, string>("[1, 2, \"failure\"]", "OneOf");
+            Helpers.TestFailure<TypeUnion<int, bool>[], int, bool>("[3, 2, \"failure\"]", "OneOf");
 
-            Helpers.TestSuccess<Dictionary<string, TypeUnion<string, int>>, string, int>("{\"value1\":\"kickban\", \"value2\":42}", new Dictionary<string, TypeUnion<string, int>>
+            Helpers.TestSuccess<Dictionary<string, TypeUnion<string, DateTime>>, string, DateTime>("{\"value1\":\"kickban\", \"value2\":\"2020-01-01T14:00:00Z\"}", new Dictionary<string, TypeUnion<string, DateTime>>
             {
-                {"value1", new TypeUnion<string, int>.Left("kickban")},
-                {"value2", new TypeUnion<string, int>.Right(42)}
-            }, "OneOf");
+                {"value1", new TypeUnion<string, DateTime>.Left("kickban")},
+                {"value2", new TypeUnion<string, DateTime>.Both("2020-01-01T14:00:00Z", new DateTime(2020, 1, 1, 14, 0, 0, DateTimeKind.Utc))}
+            }, "AnyOf");
 
             Helpers.TestFailure<Dictionary<string, TypeUnion<string, bool>>, string, bool>("{\"value1\":\"kickban\", \"value2\":2}", "OneOf");
         }
