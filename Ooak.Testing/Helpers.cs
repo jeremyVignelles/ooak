@@ -70,6 +70,22 @@ namespace Ooak.Testing
             Assert.AreEqual(newtonsoftJsonExpected, deserializedNewtonsoft);
         }
 
+        public static void TestSuccess<TDeserialized>(string input, TDeserialized expected)
+        {
+            TestSuccess<TDeserialized>(input, expected, expected);
+        }
+
+        public static void TestSuccess<TDeserialized>(string input, TDeserialized systemTextJsonExpected, TDeserialized newtonsoftJsonExpected)
+        {
+            var deserialized = DeserializeSystemTextJson<TDeserialized>(input);
+            Console.WriteLine("Checking System.Text.Json deserialized value");
+            Assert.AreEqual(systemTextJsonExpected, deserialized);
+
+            var deserializedNewtonsoft = DeserializeNewtonsoftJson<TDeserialized>(input);
+            Console.WriteLine("Checking Newtonsoft.Json deserialized value");
+            Assert.AreEqual(newtonsoftJsonExpected, deserializedNewtonsoft);
+        }
+
         public static void TestFailure<TDeserialized>(string input)
         {
             Console.WriteLine("Attempting System.Text.Json deserialization");

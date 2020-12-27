@@ -1,12 +1,10 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
-using Newtonsoft.Json;
 
 namespace Ooak.Testing.Models
 {
     public class DateWrapper
     {
-        [Newtonsoft.Json.JsonProperty(Required = Required.Always)] // Sadly, no equivalent for STJ...
+        [Newtonsoft.Json.JsonProperty(Required = Newtonsoft.Json.Required.Always)] // Sadly, no equivalent for STJ...
         public DateTime DateValue { get; set; }
 
         public override bool Equals(object? obj)
