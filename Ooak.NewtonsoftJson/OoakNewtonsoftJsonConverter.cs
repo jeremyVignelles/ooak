@@ -66,8 +66,8 @@ namespace Ooak.NewtonsoftJson
             Exception? leftException = null;
             try
             {
-                left = token.ToObject<TLeft>(serializer);
-                leftIsValid = true;
+                left = this.DeserializeAsLeft(token, serializer);
+                leftIsValid = left is not null && this.LeftIsValid(left);
             }
             catch (JsonException ex)
             {
@@ -79,8 +79,8 @@ namespace Ooak.NewtonsoftJson
             Exception? rightException = null;
             try
             {
-                right = token.ToObject<TRight>(serializer);
-                rightIsValid = true;
+                right = this.DeserializeAsRight(token, serializer);
+                rightIsValid = right is not null && this.RightIsValid(right);
             }
             catch (JsonException ex)
             {
@@ -114,8 +114,41 @@ namespace Ooak.NewtonsoftJson
                 return new TypeUnion<TLeft, TRight>.Right(right!);
             }
 
-            throw new JsonSerializationException($"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name}", new AggregateException(leftException, rightException));
+            throw new JsonSerializationException($"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name}",
+                new AggregateException(
+                    leftException ?? new Exception("Left was deserialized as null or as an invalid value"),
+                    rightException ?? new Exception("Right was deserialized as null or as an invalid value")));
         }
+
+        /// <summary>
+        /// The method that tries to perform a deserialization as TLeft. Throws <see cref="JsonSerializationException"/> on error.
+        /// </summary>
+        /// <param name="token">The token to deserialize</param>
+        /// <param name="serializer">The serializer that contains serializer configuration</param>
+        /// <returns>The deserialized value.</returns>
+        protected virtual TLeft? DeserializeAsLeft(JToken token, JsonSerializer serializer) => token.ToObject<TLeft>(serializer);
+
+        /// <summary>
+        /// The method that tries to perform a deserialization as TRight. Throws <see cref="JsonSerializationException"/> on error.
+        /// </summary>
+        /// <param name="token">The token to deserialize</param>
+        /// <param name="serializer">The serializer that contains serializer configuration</param>
+        /// <returns>The deserialized value.</returns>
+        protected virtual TRight? DeserializeAsRight(JToken token, JsonSerializer serializer) => token.ToObject<TRight>(serializer);
+
+        /// <summary>
+        /// Returns a value indicating whether the deserialized TLeft value is valid
+        /// </summary>
+        /// <param name="value">The deserialized value</param>
+        /// <returns>A boolean indicating whether the deserialized value is valid</returns>
+        protected virtual bool LeftIsValid(TLeft value) => true;
+
+        /// <summary>
+        /// Returns a value indicating whether the deserialized TRight value is valid
+        /// </summary>
+        /// <param name="value">The deserialized value</param>
+        /// <returns>A boolean indicating whether the deserialized value is valid</returns>
+        protected virtual bool RightIsValid(TRight value) => true;
 
         /// <summary>
         /// This method is not yet implemented

@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using Ooak.Testing.Converters;
 using Ooak.Testing.Models;
 
 namespace Ooak.Testing
@@ -29,16 +30,17 @@ namespace Ooak.Testing
         [Test]
         public void TestDifferences()
         {
-            Helpers.TestSuccess<TypeUnion<IntWrapper, StringWrapper>, IntWrapper, StringWrapper>(
+            // Default System.Text.Json doesn't crash deserialization if a non-null property is missing (no equivalent for JsonRequired) https://github.com/dotnet/runtime/issues/1256
+            Helpers.TestSuccess<TypeUnion<IntWrapper, StringWrapper>>(
                 "{\"IntValue\": 42}",
-                new TypeUnion<IntWrapper, StringWrapper>.Both(new IntWrapper { IntValue = 42 }, new StringWrapper()), // This is bad... https://github.com/dotnet/runtime/issues/1256
                 new TypeUnion<IntWrapper, StringWrapper>.Left(new IntWrapper { IntValue = 42 }),
-                "AnyOf");
-            Helpers.TestSuccess<TypeUnion<IntWrapper, StringWrapper>, IntWrapper, StringWrapper>(
+                new IntWrapperStringWrapperSystemTextJsonConverter(),
+                Helpers.MakeNewtonsoftJsonConverter<IntWrapper, StringWrapper>("OneOf"));
+            Helpers.TestSuccess<TypeUnion<IntWrapper, StringWrapper>>(
                 "{\"StringValue\": \"kickban\"}",
-                new TypeUnion<IntWrapper, StringWrapper>.Both(new IntWrapper { IntValue = 0 }, new StringWrapper { StringValue = "kickban" }), // This is bad... https://github.com/dotnet/runtime/issues/1256
                 new TypeUnion<IntWrapper, StringWrapper>.Right(new StringWrapper { StringValue = "kickban" }),
-                "AnyOf");
+                new IntWrapperStringWrapperSystemTextJsonConverter(),
+                Helpers.MakeNewtonsoftJsonConverter<IntWrapper, StringWrapper>("OneOf"));
         }
     }
 }

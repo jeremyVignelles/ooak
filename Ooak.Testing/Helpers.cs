@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using NUnit.Framework;
 
@@ -54,18 +55,28 @@ namespace Ooak.Testing
             where TLeft : notnull
             where TRight : notnull
         {
-            TestSuccess<TDeserialized, TLeft, TRight>(input, expected, expected, converterType);
+            TestSuccess<TDeserialized>(input, expected, expected, MakeSystemTextJsonConverter<TLeft, TRight>(converterType), MakeNewtonsoftJsonConverter<TLeft, TRight>(converterType));
         }
 
-        public static void TestSuccess<TDeserialized, TLeft, TRight>(string input, TDeserialized systemTextJsonExpected, TDeserialized newtonsoftJsonExpected, string converterType)
-            where TLeft : notnull
-            where TRight : notnull
+        public static void TestSuccess<TDeserialized>(
+            string input,
+            TDeserialized expected,
+            System.Text.Json.Serialization.JsonConverter systemTextJsonSerializer,
+            Newtonsoft.Json.JsonConverter newtonsoftJsonConverter)
         {
-            var deserialized = DeserializeSystemTextJson<TDeserialized>(input, MakeSystemTextJsonConverter<TLeft, TRight>(converterType));
+            TestSuccess<TDeserialized>(input, expected, expected, systemTextJsonSerializer, newtonsoftJsonConverter);
+        }
+
+        public static void TestSuccess<TDeserialized>(
+            string input,
+            TDeserialized systemTextJsonExpected, TDeserialized newtonsoftJsonExpected,
+            System.Text.Json.Serialization.JsonConverter systemTextJsonSerializer, Newtonsoft.Json.JsonConverter newtonsoftJsonConverter)
+        {
+            var deserialized = DeserializeSystemTextJson<TDeserialized>(input, systemTextJsonSerializer);
             Console.WriteLine("Checking System.Text.Json deserialized value");
             Assert.AreEqual(systemTextJsonExpected, deserialized);
 
-            var deserializedNewtonsoft = DeserializeNewtonsoftJson<TDeserialized>(input, MakeNewtonsoftJsonConverter<TLeft, TRight>(converterType));
+            var deserializedNewtonsoft = DeserializeNewtonsoftJson<TDeserialized>(input, newtonsoftJsonConverter);
             Console.WriteLine("Checking Newtonsoft.Json deserialized value");
             Assert.AreEqual(newtonsoftJsonExpected, deserializedNewtonsoft);
         }

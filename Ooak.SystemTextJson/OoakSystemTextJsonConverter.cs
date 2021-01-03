@@ -70,8 +70,8 @@ namespace Ooak.SystemTextJson
                 try
                 {
                     var reader2 = reader;
-                    left = JsonSerializer.Deserialize<TLeft>(ref reader2, options);
-                    leftIsValid = true;
+                    left = this.DeserializeAsLeft(ref reader2, options);
+                    leftIsValid = left is not null && this.LeftIsValid(left);
                 }
                 catch (JsonException ex)
                 {
@@ -84,8 +84,8 @@ namespace Ooak.SystemTextJson
                 try
                 {
                     var reader2 = reader;
-                    right = JsonSerializer.Deserialize<TRight>(ref reader2, options);
-                    rightIsValid = true;
+                    right = this.DeserializeAsRight(ref reader2, options);
+                    rightIsValid = right is not null && this.RightIsValid(right);
                 }
                 catch (JsonException ex)
                 {
@@ -126,13 +126,46 @@ namespace Ooak.SystemTextJson
                 }
 
                 throw new JsonException(
-                    $"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name}", new AggregateException(leftException, rightException));
+                    $"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name}",
+                    new AggregateException(
+                        leftException ?? new Exception("Left was deserialized as null or as an invalid value"),
+                        rightException ?? new Exception("Right was deserialized as null or as an invalid value")));
             }
             finally
             {
                 reader.Skip();
             }
         }
+
+        /// <summary>
+        /// The method that tries to perform a deserialization as TLeft. Throws <see cref="JsonException"/> on error.
+        /// </summary>
+        /// <param name="reader">The reader to read values from</param>
+        /// <param name="options">The serialization options</param>
+        /// <returns>The deserialized value.</returns>
+        protected virtual TLeft? DeserializeAsLeft(ref Utf8JsonReader reader, JsonSerializerOptions options) => JsonSerializer.Deserialize<TLeft>(ref reader, options);
+
+        /// <summary>
+        /// The method that tries to perform a deserialization as TRight. Throws <see cref="JsonException"/> on error.
+        /// </summary>
+        /// <param name="reader">The reader to read values from</param>
+        /// <param name="options">The serialization options</param>
+        /// <returns>The deserialized value.</returns>
+        protected virtual TRight? DeserializeAsRight(ref Utf8JsonReader reader, JsonSerializerOptions options) => JsonSerializer.Deserialize<TRight>(ref reader, options);
+
+        /// <summary>
+        /// Returns a value indicating whether the deserialized TLeft value is valid
+        /// </summary>
+        /// <param name="value">The deserialized value</param>
+        /// <returns>A boolean indicating whether the deserialized value is valid</returns>
+        protected virtual bool LeftIsValid(TLeft value) => true;
+
+        /// <summary>
+        /// Returns a value indicating whether the deserialized TRight value is valid
+        /// </summary>
+        /// <param name="value">The deserialized value</param>
+        /// <returns>A boolean indicating whether the deserialized value is valid</returns>
+        protected virtual bool RightIsValid(TRight value) => true;
 
         /// <summary>
         /// This method is not yet implemented
