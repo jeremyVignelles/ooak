@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 namespace Ooak.NewtonsoftJson
 {
     /// <summary>
-    /// The <see cref="System.Text.Json.Serialization.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/>.
+    /// The <see cref="Newtonsoft.Json.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/>.
     /// </summary>
     /// <typeparam name="TLeft">The left parameter</typeparam>
     /// <typeparam name="TRight">The right parameter</typeparam>
@@ -130,7 +130,7 @@ namespace Ooak.NewtonsoftJson
     }
 
     /// <summary>
-    /// The <see cref="System.Text.Json.Serialization.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/>
+    /// The <see cref="Newtonsoft.Json.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/>
     /// using the <see cref="OoakNewtonsoftJsonConverter{TLeft,TRight}.ConverterKind.OneOf"/> rules.
     /// </summary>
     /// <typeparam name="TLeft">The left parameter</typeparam>
@@ -148,7 +148,7 @@ namespace Ooak.NewtonsoftJson
     }
 
     /// <summary>
-    /// The <see cref="System.Text.Json.Serialization.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/>
+    /// The <see cref="Newtonsoft.Json.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/>
     /// using the <see cref="OoakNewtonsoftJsonConverter{TLeft,TRight}.ConverterKind.AnyOf"/> rules.
     /// </summary>
     /// <typeparam name="TLeft">The left parameter</typeparam>
@@ -166,7 +166,7 @@ namespace Ooak.NewtonsoftJson
     }
 
     /// <summary>
-    /// The <see cref="System.Text.Json.Serialization.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/>
+    /// The <see cref="Newtonsoft.Json.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/>
     /// using the <see cref="OoakNewtonsoftJsonConverter{TLeft,TRight}.ConverterKind.AllOf"/> rules.
     /// </summary>
     /// <typeparam name="TLeft">The left parameter</typeparam>
