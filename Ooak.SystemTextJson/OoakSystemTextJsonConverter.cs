@@ -59,7 +59,7 @@ namespace Ooak.SystemTextJson
         {
             var leftReader = reader;
             var rightReader = reader;
-            TLeft left = default;
+            TLeft? left = default;
             var leftIsValid = false;
             Exception? leftException = null;
             try
@@ -71,8 +71,8 @@ namespace Ooak.SystemTextJson
             {
                 leftException = ex;
             }
-            
-            TRight right = default;
+
+            TRight? right = default;
             var rightIsValid = false;
             Exception? rightException = null;
             try
