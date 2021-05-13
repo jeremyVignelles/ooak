@@ -61,7 +61,7 @@ namespace Ooak.NewtonsoftJson
         {
             JToken token = JToken.ReadFrom(reader);
 
-            TLeft left = default;
+            TLeft? left = default;
             var leftIsValid = false;
             Exception? leftException = null;
             try
@@ -74,7 +74,7 @@ namespace Ooak.NewtonsoftJson
                 leftException = ex;
             }
 
-            TRight right = default;
+            TRight? right = default;
             var rightIsValid = false;
             Exception? rightException = null;
             try
