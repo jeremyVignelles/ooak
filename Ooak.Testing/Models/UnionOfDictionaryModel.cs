@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+#pragma warning disable IDE0018 // Inline variable declaration - I find it clearer that way
 
 namespace Ooak.Testing.Models
 {

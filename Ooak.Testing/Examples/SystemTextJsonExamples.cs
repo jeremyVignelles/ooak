@@ -12,7 +12,7 @@ namespace Ooak.Testing.Examples
         {
             // You can put the converter directly on the property:
             [JsonConverter(typeof(OneOfJsonConverter<int, DateTime>))]
-            public TypeUnion<int, DateTime> DateOrTimestamp { get; set; }
+            public TypeUnion<int, DateTime> DateOrTimestamp { get; set; } = null!;
         }
 
 #if NET5_0
@@ -23,7 +23,7 @@ namespace Ooak.Testing.Examples
         );
 #endif
 
-        public TypeUnion<int, DateTime> DeserializeMethodSystemTextJson()
+        public static TypeUnion<int, DateTime> DeserializeMethodSystemTextJson()
         {
             // With STJ, as the deserializer options. Useful for example when the TypeUnion<> is the deserialization root
             return JsonSerializer.Deserialize<TypeUnion<int, DateTime>>("\"2000-01-01T00:00:00Z\"",
@@ -32,7 +32,7 @@ namespace Ooak.Testing.Examples
                     Converters = { new OneOfJsonConverter<int, DateTime>() }
                 })!;
         }
-        public TypeUnion<int, DateTime> DeserializeMethodNewtonsoftJson()
+        public static TypeUnion<int, DateTime> DeserializeMethodNewtonsoftJson()
         {
             // With Newtonsoft.Json, as the deserializer options. Useful for example when the TypeUnion<> is the deserialization root
             // Note: Here, I'm using fully-qualified names with the Newtonsoft namespace. This is only needed because in this example,
@@ -48,16 +48,16 @@ namespace Ooak.Testing.Examples
         public void TestExamples()
         {
             var deserialized = JsonSerializer.Deserialize<TestModel>("{\"DateOrTimestamp\": \"2000-01-01T00:00:00Z\"}");
-            this.AssertExpectedDate(deserialized!.DateOrTimestamp);
+            AssertExpectedDate(deserialized!.DateOrTimestamp);
 #if NET5_0
             var deserializedRecord = JsonSerializer.Deserialize<TestRecord>("{\"DateOrTimestamp\": \"2000-01-01T00:00:00Z\"}");
-            this.AssertExpectedDate(deserialized!.DateOrTimestamp);
+            AssertExpectedDate(deserialized!.DateOrTimestamp);
 #endif
-            this.AssertExpectedDate(this.DeserializeMethodSystemTextJson());
-            this.AssertExpectedDate(this.DeserializeMethodNewtonsoftJson());
+            AssertExpectedDate(DeserializeMethodSystemTextJson());
+            AssertExpectedDate(DeserializeMethodNewtonsoftJson());
         }
 
-        private void AssertExpectedDate(TypeUnion<int, DateTime> value)
+        private static void AssertExpectedDate(TypeUnion<int, DateTime> value)
         {
             Assert.IsTrue(value is TypeUnion<int, DateTime>.Right);
         }

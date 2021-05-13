@@ -1,8 +1,9 @@
-﻿using NUnit.Framework;
-// ReSharper disable JoinDeclarationAndInitializer
+﻿// ReSharper disable JoinDeclarationAndInitializer
 // ReSharper disable NotAccessedVariable
+#pragma warning disable IDE0079 // Remove unnecessary suppression - It is necessary...
 #pragma warning disable IDE0059 // Unnecessary assignment of a value - This is a demo file
 
+#pragma warning restore IDE0079 // Remove unnecessary suppression
 #if NET5_0
 namespace Ooak.Testing.Examples
 {
@@ -18,7 +19,7 @@ namespace Ooak.Testing.Examples
         /// Tries to parse the date. Returns either a DateTime on success, the original string otherwise.
         /// This example is stupid, but demonstrates how things work
         /// </summary>
-        TypeUnion<DateTime, string> TryParseDate(string date)
+        public static TypeUnion<DateTime, string> TryParseDate(string date)
         {
             if (DateTime.TryParse(date, out var outDateTime))
             {
@@ -35,7 +36,7 @@ namespace Ooak.Testing.Examples
         public record Paging(int Page, int ItemsPerPage);
         public record Ordering(bool Ascending);
         
-        public void DemoBoth()
+        public static void DemoBoth()
         {
             TypeUnion<Paging, Ordering> queryParameters;
             // Can be left (Paging)
@@ -51,7 +52,7 @@ namespace Ooak.Testing.Examples
 
         #region Example 3 - Using the type union object
 
-        public void UsingTypeUnion(TypeUnion<Paging, Ordering> queryParameters)
+        public static void UsingTypeUnion(TypeUnion<Paging, Ordering> queryParameters)
         {
             // Detect with `is` and the Left, Right and Both classes
             if (queryParameters is TypeUnion<Paging, Ordering>.Left p)

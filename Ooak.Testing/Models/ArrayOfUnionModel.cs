@@ -8,7 +8,7 @@ namespace Ooak.Testing.Models
     {
         [Newtonsoft.Json.JsonProperty(ItemConverterType = typeof(Ooak.NewtonsoftJson.OneOfJsonConverter<int, DateTime>))]
         [System.Text.Json.Serialization.JsonConverter(typeof(ArraySystemTextJsonConverter<Ooak.SystemTextJson.OneOfJsonConverter<int, DateTime>, TypeUnion<int, DateTime>>))]
-        public TypeUnion<int, DateTime>[] Values { get; set; } = new TypeUnion<int, DateTime>[0];
+        public TypeUnion<int, DateTime>[] Values { get; set; } = Array.Empty<TypeUnion<int, DateTime>>();
 
         public override bool Equals(object? obj)
         {

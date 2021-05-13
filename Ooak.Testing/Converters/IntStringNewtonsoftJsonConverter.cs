@@ -18,7 +18,7 @@ namespace Ooak.Testing.Converters
             return token.Value<int>();
         }
 
-        protected override string DeserializeAsRight(JToken token, JsonSerializer serializer)
+        protected override string? DeserializeAsRight(JToken token, JsonSerializer serializer)
         {
             if (token.Type != JTokenType.String)
             {
