@@ -77,7 +77,6 @@ namespace Ooak.SystemTextJson
             Exception? rightException = null;
             try
             {
-                var reader2 = reader;
                 right = this.DeserializeAsRight(ref rightReader, options);
                 rightIsValid = right is not null && this.RightIsValid(right);
             }
