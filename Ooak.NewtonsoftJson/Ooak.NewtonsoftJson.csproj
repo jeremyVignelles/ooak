@@ -6,7 +6,8 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
     <PropertyGroup>
-        <Version>0.0.1</Version>
+        <Version>0.0.2</Version>
+        <Description>Ooak deserializer for Newtonsoft.Json that allows the use of oneOf/anyOf/allOf</Description>
         <Authors>Jérémy VIGNELLES</Authors>
         <PackageReadmeFile>ooak.md</PackageReadmeFile>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
