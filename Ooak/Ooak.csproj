@@ -5,4 +5,14 @@
         <LangVersion>9</LangVersion>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
+    <PropertyGroup>
+        <Version>0.0.1</Version>
+        <Authors>Jérémy VIGNELLES</Authors>
+        <PackageReadmeFile>ooak.md</PackageReadmeFile>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/jeremyVignelles/ooak.git</RepositoryUrl>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="../Documentation/ooak.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
 </Project>
