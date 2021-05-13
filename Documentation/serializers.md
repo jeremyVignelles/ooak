@@ -20,43 +20,7 @@ All these converters are used to deserialize a part of a JSON document into a `T
 
 You can use the converters, as any other JsonConverter.
 
-```cs
-public class TestModel
-{
-    // You can put the converter directly on the property:
-    [JsonConverter(typeof(OneOfJsonConverter<int, DateTime>))]
-    public TypeUnion<int, DateTime> DateOrTimestamp { get; set; }
-}
-
-#if NET5_0
-public record TestRecord(
-    // You can put the converter on a record's property
-    [property: JsonConverter(typeof(OneOfJsonConverter<int, DateTime>))]
-    TypeUnion<int, DateTime> DateOrTimestamp
-);
-#endif
-
-public TypeUnion<int, DateTime> DeserializeMethodSystemTextJson()
-{
-    // With STJ, as the deserializer options. Useful for example when the TypeUnion<> is the deserialization root
-    return JsonSerializer.Deserialize<TypeUnion<int, DateTime>>("\"2000-01-01T00:00:00Z\"",
-        new JsonSerializerOptions()
-        {
-            Converters = { new OneOfJsonConverter<int, DateTime>() }
-        })!;
-}
-public TypeUnion<int, DateTime> DeserializeMethodNewtonsoftJson()
-{
-    // With Newtonsoft.Json, as the deserializer options. Useful for example when the TypeUnion<> is the deserialization root
-    // Note: Here, I'm using fully-qualified names with the Newtonsoft namespace. This is only needed because in this example,
-    // I have mixed STJ and Newtonsoft in the same file. You shouldn't need to be that verbose in your own code (don't mix serializers!)
-    return Newtonsoft.Json.JsonConvert.DeserializeObject<TypeUnion<int, DateTime>>("\"2000-01-01T00:00:00Z\"",
-        new Newtonsoft.Json.JsonSerializerSettings()
-        {
-            Converters = { new NewtonsoftJson.OneOfJsonConverter<int, DateTime>() }
-        })!;
-}
-```
+https://github.com/jeremyVignelles/ooak/blob/1b5254aeb57fa8a79eb5b59be01d357835c5f3bb/Ooak.Testing/Examples/SystemTextJsonExamples.cs#L11-L45
 
 ## How it works
 
