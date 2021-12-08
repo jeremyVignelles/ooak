@@ -6,7 +6,7 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
     <PropertyGroup>
-        <Version>0.0.3</Version>
+        <Version>0.1.0</Version>
         <Description>Ooak - The TypeUnion implementation</Description>
         <Authors>Jérémy VIGNELLES</Authors>
         <PackageReadmeFile>ooak.md</PackageReadmeFile>
