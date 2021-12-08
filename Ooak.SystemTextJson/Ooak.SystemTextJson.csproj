@@ -9,12 +9,12 @@
         <Version>0.0.3</Version>
         <Description>Ooak deserializer for System.Text.Json that allows the use of oneOf/anyOf/allOf</Description>
         <Authors>Jérémy VIGNELLES</Authors>
-        <PackageReadmeFile>ooak.md</PackageReadmeFile>
+        <PackageReadmeFile>ooak.SystemTextJson.md</PackageReadmeFile>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryUrl>https://github.com/jeremyVignelles/ooak.git</RepositoryUrl>
     </PropertyGroup>
     <ItemGroup>
-        <None Include="../Documentation/serializers.md" Pack="true" PackagePath="\"/>
+        <None Include="../Documentation/ooak.SystemTextJson.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="System.Text.Json" Version="5.0.2" />
