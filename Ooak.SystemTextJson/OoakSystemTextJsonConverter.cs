@@ -40,12 +40,19 @@ namespace Ooak.SystemTextJson
         public ConverterKind Kind { get; }
 
         /// <summary>
+        /// A value indicating whether this instance will deserialize entities like `TypeUnion{A,TypeUnion{B, C}}` with the same Kind property
+        /// </summary>
+        public bool Recursive { get; }
+
+        /// <summary>
         /// The converter's constructor
         /// </summary>
         /// <param name="kind">The kind of conversion to apply</param>
-        internal OoakSystemTextJsonConverter(ConverterKind kind)
+        /// <param name="recursive">A value indicating whether this instance will deserialize entities like `TypeUnion{A,TypeUnion{B, C}}` with the same Kind property</param>
+        internal OoakSystemTextJsonConverter(ConverterKind kind, bool recursive = false)
         {
             this.Kind = kind;
+            this.Recursive = recursive;
         }
 
         /// <summary>
@@ -135,7 +142,7 @@ namespace Ooak.SystemTextJson
         /// <param name="reader">The reader to read values from</param>
         /// <param name="options">The serialization options</param>
         /// <returns>The deserialized value.</returns>
-        protected virtual TLeft? DeserializeAsLeft(ref Utf8JsonReader reader, JsonSerializerOptions options) => JsonSerializer.Deserialize<TLeft>(ref reader, options);
+        protected virtual TLeft? DeserializeAsLeft(ref Utf8JsonReader reader, JsonSerializerOptions options) => this.DefaultDeserialize<TLeft>(ref reader, options);
 
         /// <summary>
         /// The method that tries to perform a deserialization as TRight. Throws <see cref="JsonException"/> on error.
@@ -143,7 +150,7 @@ namespace Ooak.SystemTextJson
         /// <param name="reader">The reader to read values from</param>
         /// <param name="options">The serialization options</param>
         /// <returns>The deserialized value.</returns>
-        protected virtual TRight? DeserializeAsRight(ref Utf8JsonReader reader, JsonSerializerOptions options) => JsonSerializer.Deserialize<TRight>(ref reader, options);
+        protected virtual TRight? DeserializeAsRight(ref Utf8JsonReader reader, JsonSerializerOptions options) => this.DefaultDeserialize<TRight>(ref reader, options);
 
         /// <summary>
         /// Returns a value indicating whether the deserialized TLeft value is valid
@@ -168,6 +175,37 @@ namespace Ooak.SystemTextJson
         public override void Write(Utf8JsonWriter writer, TypeUnion<TLeft, TRight> value, JsonSerializerOptions options)
         {
             throw new NotImplementedException();
+        }
+
+        private delegate TItem? RecursiveRead<TItem>(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options);
+
+        /// <summary>
+        /// The default deserialization method that can deserialize any TItem
+        /// </summary>
+        /// <typeparam name="TItem">The item type to deserialize</typeparam>
+        /// <param name="reader">The reader to read values from</param>
+        /// <param name="options">The serialization options</param>
+        /// <returns>The deserialized value.</returns>
+        protected virtual TItem? DefaultDeserialize<TItem>(ref Utf8JsonReader reader, JsonSerializerOptions options)
+        {
+            if (this.Recursive) {
+                var itemType = typeof(TItem);
+                if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(TypeUnion<,>))
+                {
+                    var defaultRecursiveConverterType = this.Kind switch
+                    {
+                        ConverterKind.OneOf => typeof(RecursiveOneOfJsonConverter<,>),
+                        ConverterKind.AnyOf => typeof(RecursiveAnyOfJsonConverter<,>),
+                        ConverterKind.AllOf => typeof(RecursiveAllOfJsonConverter<,>),
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+
+                    var recursiveConverterType = defaultRecursiveConverterType.MakeGenericType(itemType.GenericTypeArguments);
+                    var recursiveConverter = recursiveConverterType.GetConstructor(Array.Empty<Type>()).Invoke(Array.Empty<object>());
+                    return ((RecursiveRead<TItem>)recursiveConverterType.GetMethod("Read").CreateDelegate(typeof(RecursiveRead<TItem>), recursiveConverter)).Invoke(ref reader, itemType, options);
+                }
+            }
+            return JsonSerializer.Deserialize<TItem>(ref reader, options);
         }
     }
 
@@ -221,6 +259,63 @@ namespace Ooak.SystemTextJson
         /// The constructor that initializes the converter
         /// </summary>
         public AllOfJsonConverter() : base(ConverterKind.AllOf)
+        {
+        }
+    }
+
+    /// <summary>
+    /// The <see cref="System.Text.Json.Serialization.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/> recusively
+    /// using the <see cref="OoakSystemTextJsonConverter{TLeft,TRight}.ConverterKind.OneOf"/> rules.
+    /// This is a recursive (= can deserialize TypeUnion of TypeUnion with the same kind) version of the <see cref="OneOfJsonConverter{TLeft, TRight}"/> class
+    /// </summary>
+    /// <typeparam name="TLeft">The left parameter</typeparam>
+    /// <typeparam name="TRight">The right parameter</typeparam>
+    public class RecursiveOneOfJsonConverter<TLeft, TRight> : OoakSystemTextJsonConverter<TLeft, TRight>
+        where TLeft : notnull
+        where TRight : notnull
+    {
+        /// <summary>
+        /// The constructor that initializes the converter
+        /// </summary>
+        public RecursiveOneOfJsonConverter() : base(ConverterKind.OneOf, true)
+        {
+        }
+    }
+
+    /// <summary>
+    /// The <see cref="System.Text.Json.Serialization.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/> recusively
+    /// using the <see cref="OoakSystemTextJsonConverter{TLeft,TRight}.ConverterKind.AnyOf"/> rules.
+    /// This is a recursive (= can deserialize TypeUnion of TypeUnion with the same kind) version of the <see cref="AnyOfJsonConverter{TLeft, TRight}"/> class
+    /// </summary>
+    /// <typeparam name="TLeft">The left parameter</typeparam>
+    /// <typeparam name="TRight">The right parameter</typeparam>
+    public class RecursiveAnyOfJsonConverter<TLeft, TRight> : OoakSystemTextJsonConverter<TLeft, TRight>
+        where TLeft : notnull
+        where TRight : notnull
+    {
+        /// <summary>
+        /// The constructor that initializes the converter
+        /// </summary>
+        public RecursiveAnyOfJsonConverter() : base(ConverterKind.AnyOf, true)
+        {
+        }
+    }
+
+    /// <summary>
+    /// The <see cref="System.Text.Json.Serialization.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/> recusively
+    /// using the <see cref="OoakSystemTextJsonConverter{TLeft,TRight}.ConverterKind.AllOf"/> rules.
+    /// This is a recursive (= can deserialize TypeUnion of TypeUnion with the same kind) version of the <see cref="AllOfJsonConverter{TLeft, TRight}"/> class
+    /// </summary>
+    /// <typeparam name="TLeft">The left parameter</typeparam>
+    /// <typeparam name="TRight">The right parameter</typeparam>
+    public class RecursiveAllOfJsonConverter<TLeft, TRight> : OoakSystemTextJsonConverter<TLeft, TRight>
+        where TLeft : notnull
+        where TRight : notnull
+    {
+        /// <summary>
+        /// The constructor that initializes the converter
+        /// </summary>
+        public RecursiveAllOfJsonConverter() : base(ConverterKind.AllOf, true)
         {
         }
     }
