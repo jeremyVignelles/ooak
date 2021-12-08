@@ -59,6 +59,7 @@ namespace Ooak.NewtonsoftJson
         /// <returns>The object value.</returns>
         public override TypeUnion<TLeft, TRight> ReadJson(JsonReader reader, Type objectType, TypeUnion<TLeft, TRight>? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
+            var path = reader.Path;
             JToken token = JToken.ReadFrom(reader);
 
             TLeft? left = default;
@@ -114,7 +115,7 @@ namespace Ooak.NewtonsoftJson
                 return new TypeUnion<TLeft, TRight>.Right(right!);
             }
 
-            throw new JsonSerializationException($"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name}",
+            throw new JsonSerializationException($"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name} at path {path}",
                 new AggregateException(
                     leftException ?? new Exception("Left was deserialized as null or as an invalid value"),
                     rightException ?? new Exception("Right was deserialized as null or as an invalid value")));

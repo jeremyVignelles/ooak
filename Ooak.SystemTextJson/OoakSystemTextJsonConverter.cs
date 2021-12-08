@@ -57,6 +57,7 @@ namespace Ooak.SystemTextJson
         /// <returns>The deserialized value</returns>
         public override TypeUnion<TLeft, TRight>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
+            var position = reader.BytesConsumed;
             var leftReader = reader;
             var rightReader = reader;
             TLeft? left = default;
@@ -122,7 +123,7 @@ namespace Ooak.SystemTextJson
             }
 
             throw new JsonException(
-                $"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name}",
+                $"Unable to deserialize data as either {typeof(TLeft).Name} or {typeof(TRight).Name} at position {position}",
                 new AggregateException(
                     leftException ?? new Exception("Left was deserialized as null or as an invalid value"),
                     rightException ?? new Exception("Right was deserialized as null or as an invalid value")));
