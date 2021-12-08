@@ -9,7 +9,7 @@ namespace Ooak.Testing.Converters
     /// </summary>
     public class IntStringNewtonsoftJsonConverter : OneOfJsonConverter<int, string>
     {
-        protected override int DeserializeAsLeft(JToken token, JsonSerializer serializer)
+        protected override int DeserializeAsLeft(JToken token, JsonSerializer serializer, string path)
         {
             if (token.Type != JTokenType.Integer)
             {
@@ -18,7 +18,7 @@ namespace Ooak.Testing.Converters
             return token.Value<int>();
         }
 
-        protected override string? DeserializeAsRight(JToken token, JsonSerializer serializer)
+        protected override string? DeserializeAsRight(JToken token, JsonSerializer serializer, string path)
         {
             if (token.Type != JTokenType.String)
             {

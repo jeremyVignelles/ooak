@@ -40,12 +40,19 @@ namespace Ooak.NewtonsoftJson
         public ConverterKind Kind { get; }
 
         /// <summary>
+        /// A value indicating whether this instance will deserialize entities like `TypeUnion{A,TypeUnion{B, C}}` with the same Kind property
+        /// </summary>
+        public bool Recursive { get; }
+
+        /// <summary>
         /// The converter's constructor
         /// </summary>
         /// <param name="kind">The kind of conversion to apply</param>
-        internal OoakNewtonsoftJsonConverter(ConverterKind kind)
+        /// <param name="recursive">A value indicating whether this instance will deserialize entities like `TypeUnion{A,TypeUnion{B, C}}` with the same Kind property</param>
+        internal OoakNewtonsoftJsonConverter(ConverterKind kind, bool recursive = false)
         {
             this.Kind = kind;
+            this.Recursive = recursive;
         }
 
         /// <summary>
@@ -61,13 +68,25 @@ namespace Ooak.NewtonsoftJson
         {
             var path = reader.Path;
             JToken token = JToken.ReadFrom(reader);
+            return this.ReadToken(token, serializer, path);
+        }
 
+        /// <summary>
+        /// Deserializes the TypeUnion instance from a JToken
+        /// </summary>
+        /// <param name="token">The token to deserialize</param>
+        /// <param name="serializer">The serializer to use for the deserialization process</param>
+        /// <param name="path">The path of the current token being examined, for debugging purpose only</param>
+        /// <returns>The object value.</returns>
+        /// <exception cref="JsonSerializationException">The deserialization failed</exception>
+        public virtual TypeUnion<TLeft, TRight> ReadToken(JToken token, JsonSerializer serializer, string path)
+        {
             TLeft? left = default;
             var leftIsValid = false;
             Exception? leftException = null;
             try
             {
-                left = this.DeserializeAsLeft(token, serializer);
+                left = this.DeserializeAsLeft(token, serializer, path);
                 leftIsValid = left is not null && this.LeftIsValid(left);
             }
             catch (JsonException ex)
@@ -80,7 +99,7 @@ namespace Ooak.NewtonsoftJson
             Exception? rightException = null;
             try
             {
-                right = this.DeserializeAsRight(token, serializer);
+                right = this.DeserializeAsRight(token, serializer, path);
                 rightIsValid = right is not null && this.RightIsValid(right);
             }
             catch (JsonException ex)
@@ -126,16 +145,18 @@ namespace Ooak.NewtonsoftJson
         /// </summary>
         /// <param name="token">The token to deserialize</param>
         /// <param name="serializer">The serializer that contains serializer configuration</param>
+        /// <param name="path">The path of the current token being examined, for debugging purpose only</param>
         /// <returns>The deserialized value.</returns>
-        protected virtual TLeft? DeserializeAsLeft(JToken token, JsonSerializer serializer) => token.ToObject<TLeft>(serializer);
+        protected virtual TLeft? DeserializeAsLeft(JToken token, JsonSerializer serializer, string path) => this.DefaultDeserialize<TLeft>(token, serializer, path);
 
         /// <summary>
         /// The method that tries to perform a deserialization as TRight. Throws <see cref="JsonSerializationException"/> on error.
         /// </summary>
         /// <param name="token">The token to deserialize</param>
         /// <param name="serializer">The serializer that contains serializer configuration</param>
+        /// <param name="path">The path of the current token being examined, for debugging purpose only</param>
         /// <returns>The deserialized value.</returns>
-        protected virtual TRight? DeserializeAsRight(JToken token, JsonSerializer serializer) => token.ToObject<TRight>(serializer);
+        protected virtual TRight? DeserializeAsRight(JToken token, JsonSerializer serializer, string path) => this.DefaultDeserialize<TRight>(token, serializer, path);
 
         /// <summary>
         /// Returns a value indicating whether the deserialized TLeft value is valid
@@ -150,6 +171,39 @@ namespace Ooak.NewtonsoftJson
         /// <param name="value">The deserialized value</param>
         /// <returns>A boolean indicating whether the deserialized value is valid</returns>
         protected virtual bool RightIsValid(TRight value) => true;
+
+        private delegate TItem RecursiveReadToken<TItem>(JToken token, JsonSerializer serializer, string path);
+
+        /// <summary>
+        /// The default deserialization method that can deserialize any TItem
+        /// </summary>
+        /// <typeparam name="TItem">The item type to deserialize</typeparam>
+        /// <param name="token">The token to deserialize</param>
+        /// <param name="serializer">The serializer that contains serializer configuration</param>
+        /// <param name="path">The path of the current token being examined, for debugging purpose only</param>
+        /// <returns>The deserialized value.</returns>
+        protected virtual TItem? DefaultDeserialize<TItem>(JToken token, JsonSerializer serializer, string path)
+        {
+            if (this.Recursive)
+            {
+                var itemType = typeof(TItem);
+                if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(TypeUnion<,>))
+                {
+                    var defaultRecursiveConverterType = this.Kind switch
+                    {
+                        ConverterKind.OneOf => typeof(RecursiveOneOfJsonConverter<,>),
+                        ConverterKind.AnyOf => typeof(RecursiveAnyOfJsonConverter<,>),
+                        ConverterKind.AllOf => typeof(RecursiveAllOfJsonConverter<,>),
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+
+                    var recursiveConverterType = defaultRecursiveConverterType.MakeGenericType(itemType.GenericTypeArguments);
+                    var recursiveConverter = recursiveConverterType.GetConstructor(Array.Empty<Type>()).Invoke(Array.Empty<object>());
+                    return ((RecursiveReadToken<TItem>)recursiveConverterType.GetMethod("ReadToken").CreateDelegate(typeof(RecursiveReadToken<TItem>), recursiveConverter)).Invoke(token, serializer, path);
+                }
+            }
+            return token.ToObject<TItem>(serializer);
+        }
 
         /// <summary>
         /// This method is not yet implemented
@@ -213,6 +267,63 @@ namespace Ooak.NewtonsoftJson
         /// The constructor that initializes the converter
         /// </summary>
         public AllOfJsonConverter() : base(ConverterKind.AllOf)
+        {
+        }
+    }
+
+    /// <summary>
+    /// The <see cref="Newtonsoft.Json.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/> recusively
+    /// using the <see cref="OoakNewtonsoftJsonConverter{TLeft,TRight}.ConverterKind.OneOf"/> rules.
+    /// This is a recursive (= can deserialize TypeUnion of TypeUnion with the same kind) version of the <see cref="OneOfJsonConverter{TLeft, TRight}"/> class
+    /// </summary>
+    /// <typeparam name="TLeft">The left parameter</typeparam>
+    /// <typeparam name="TRight">The right parameter</typeparam>
+    public class RecursiveOneOfJsonConverter<TLeft, TRight> : OoakNewtonsoftJsonConverter<TLeft, TRight>
+        where TLeft : notnull
+        where TRight : notnull
+    {
+        /// <summary>
+        /// The constructor that initializes the converter
+        /// </summary>
+        public RecursiveOneOfJsonConverter() : base(ConverterKind.OneOf, true)
+        {
+        }
+    }
+
+    /// <summary>
+    /// The <see cref="Newtonsoft.Json.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/> recusively
+    /// using the <see cref="OoakNewtonsoftJsonConverter{TLeft,TRight}.ConverterKind.AnyOf"/> rules.
+    /// This is a recursive (= can deserialize TypeUnion of TypeUnion with the same kind) version of the <see cref="AnyOfJsonConverter{TLeft, TRight}"/> class
+    /// </summary>
+    /// <typeparam name="TLeft">The left parameter</typeparam>
+    /// <typeparam name="TRight">The right parameter</typeparam>
+    public class RecursiveAnyOfJsonConverter<TLeft, TRight> : OoakNewtonsoftJsonConverter<TLeft, TRight>
+        where TLeft : notnull
+        where TRight : notnull
+    {
+        /// <summary>
+        /// The constructor that initializes the converter
+        /// </summary>
+        public RecursiveAnyOfJsonConverter() : base(ConverterKind.AnyOf, true)
+        {
+        }
+    }
+
+    /// <summary>
+    /// The <see cref="Newtonsoft.Json.JsonConverter" /> that can deserialize instances of <see cref="TypeUnion{TLeft,TRight}"/> recusively
+    /// using the <see cref="OoakNewtonsoftJsonConverter{TLeft,TRight}.ConverterKind.AllOf"/> rules.
+    /// This is a recursive (= can deserialize TypeUnion of TypeUnion with the same kind) version of the <see cref="AllOfJsonConverter{TLeft, TRight}"/> class
+    /// </summary>
+    /// <typeparam name="TLeft">The left parameter</typeparam>
+    /// <typeparam name="TRight">The right parameter</typeparam>
+    public class RecursiveAllOfJsonConverter<TLeft, TRight> : OoakNewtonsoftJsonConverter<TLeft, TRight>
+        where TLeft : notnull
+        where TRight : notnull
+    {
+        /// <summary>
+        /// The constructor that initializes the converter
+        /// </summary>
+        public RecursiveAllOfJsonConverter() : base(ConverterKind.AllOf, true)
         {
         }
     }
